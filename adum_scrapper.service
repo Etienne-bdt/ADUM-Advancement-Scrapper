@@ -1,0 +1,8 @@
+[Unit]
+Description=ADUM Inscription Script Scrapper
+
+[Service]
+WorkingDirectory=
+EnvironmentFile=
+ExecStart=./entrypoint.sh
+Type=oneshot

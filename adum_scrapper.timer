@@ -1,0 +1,10 @@
+[Unit]
+Description=Query le status d'ADUM toutes les 30 minutes pour voir les modifications de status
+
+[Timer]
+OnBootSec=15minutes
+OnUnitActiveSec=30minutes
+Persistent=true
+
+[Install]
+WantedBy=timers.target

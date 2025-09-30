@@ -29,9 +29,13 @@ soup = bs(response.text, "html.parser")
 procedures = soup.find(id="zone_procedures")
 status = procedures.find_all("b")[-1].text
 
-#Read the last status from the file
-with open("status.txt", "r") as f:
-    last_status = f.read()
+#Read the last status from the file (handle missing file)
+try:
+    with open("status.txt", "r") as f:
+        last_status = f.read().strip()
+except FileNotFoundError:
+    last_status = ""
+
 if last_status != status:
     with open("status.txt", "w") as f:
         f.write(status)
