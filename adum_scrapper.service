@@ -4,5 +4,8 @@ Description=ADUM Inscription Script Scrapper
 [Service]
 WorkingDirectory=
 EnvironmentFile=
-ExecStart=./entrypoint.sh
+ExecStart=
 Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
