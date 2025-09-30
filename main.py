@@ -10,10 +10,15 @@ s = requests.Session()
 
 login_url = "https://adum.fr/index.pl"
 
-gotify = Gotify(
-    base_url=os.getenv("GOTIFY_BASEURL"),
-    app_token=os.getenv("GOTIFY_TOKEN")
-)
+if os.getenv("GOTIFY_BASEURL") is None or os.getenv("GOTIFY_TOKEN") is None:
+    use_gotify = False
+    print("Skipping Gotify notification, missing env vars")
+else:
+    use_gotify = True
+    gotify = Gotify(
+        base_url=os.getenv("GOTIFY_BASEURL"),
+        app_token=os.getenv("GOTIFY_TOKEN"))
+
 data = {
     "action": "login",
     "email": os.getenv("ADUM_EMAIL"),
@@ -40,8 +45,8 @@ if last_status != status:
     with open("status.txt", "w") as f:
         f.write(status)
     print(f"Status changed: {status}")
-    gotify.create_message(
-        message=status,
-        title="Status ADUM modifié"
-    )
-    
+    if use_gotify:
+        gotify.create_message(
+            message=status,
+            title="Status ADUM modifié"
+        )
