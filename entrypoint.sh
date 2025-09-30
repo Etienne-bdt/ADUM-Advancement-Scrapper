@@ -2,4 +2,4 @@
 
 source .venv/bin/activate
 
-python3 main.py
+.venv/bin/python main.py
