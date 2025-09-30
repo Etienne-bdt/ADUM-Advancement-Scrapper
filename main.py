@@ -19,6 +19,10 @@ else:
         base_url=os.getenv("GOTIFY_BASEURL"),
         app_token=os.getenv("GOTIFY_TOKEN"))
 
+if os.getenv("ADUM_EMAIL") is None or os.getenv("ADUM_PASSWORD") is None:
+    print("Missing ADUM_EMAIL or ADUM_PASSWORD env vars")
+    exit(1)
+
 data = {
     "action": "login",
     "email": os.getenv("ADUM_EMAIL"),
