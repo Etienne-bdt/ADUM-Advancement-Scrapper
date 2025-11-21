@@ -3,9 +3,9 @@
 L'école doctorale has validé my dossier d'inscription
 
 ## TODO
- - [] Export formations as an ical
- - [] Serve said ICAL through a proxy or smth
- - [] Enjoy
+ - [ ] Export formations as an ical
+ - [ ] Serve said ICAL through a proxy or smth
+ - [ ] Enjoy
 
 ## Fonctionnement
 
