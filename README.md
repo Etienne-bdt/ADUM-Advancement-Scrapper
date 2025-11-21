@@ -1,6 +1,11 @@
 # ADUM Advancement Scrapper
 
-Small project to know when l'école doctorale has finally decided to accept my dossier d'inscription en thèse
+L'école doctorale has validé my dossier d'inscription
+
+## TODO
+ - [] Export formations as an ical
+ - [] Serve said ICAL through a proxy or smth
+ - [] Enjoy
 
 ## Fonctionnement
 
