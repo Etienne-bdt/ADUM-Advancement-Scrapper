@@ -1,14 +1,20 @@
-import requests
 import os
 import dotenv
-from bs4 import BeautifulSoup as bs
 from gotify import Gotify
 
+from adum import adum
 
 dotenv.load_dotenv(".env")
-s = requests.Session()
 
-login_url = "https://adum.fr/index.pl"
+if os.getenv("ADUM_EMAIL") is None or os.getenv("ADUM_PASSWORD") is None:
+    print("Missing ADUM_EMAIL or ADUM_PASSWORD env vars")
+    exit(1)
+
+dotenv.load_dotenv(".env")
+adum_client = adum(
+    email=os.getenv("ADUM_EMAIL"),
+    password=os.getenv("ADUM_PASSWORD")
+)
 
 if os.getenv("GOTIFY_BASEURL") is None or os.getenv("GOTIFY_TOKEN") is None:
     use_gotify = False
@@ -18,26 +24,10 @@ else:
     gotify = Gotify(
         base_url=os.getenv("GOTIFY_BASEURL"),
         app_token=os.getenv("GOTIFY_TOKEN"))
+    
 
-if os.getenv("ADUM_EMAIL") is None or os.getenv("ADUM_PASSWORD") is None:
-    print("Missing ADUM_EMAIL or ADUM_PASSWORD env vars")
-    exit(1)
-
-data = {
-    "action": "login",
-    "email": os.getenv("ADUM_EMAIL"),
-    "password": os.getenv("ADUM_PASSWORD"),
-    "matFormation": ""
-}
-
-get = s.get(login_url)
-#This sets the CGESID cookie
-response = s.post(login_url, data=data)
-
-soup = bs(response.text, "html.parser")
-procedures = soup.find(id="zone_procedures")
-status = procedures.find_all("b")[-1].text
-
+status = adum_client.get_status()
+adum_client.get_formations()
 #Read the last status from the file (handle missing file)
 try:
     with open("status.txt", "r") as f:
