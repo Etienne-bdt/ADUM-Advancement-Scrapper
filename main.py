@@ -27,7 +27,8 @@ else:
     
 
 status = adum_client.get_status()
-adum_client.get_formations()
+formation_urls =adum_client.get_formations()
+print(adum_client.get_icalendar())
 #Read the last status from the file (handle missing file)
 try:
     with open("status.txt", "r") as f:

@@ -8,5 +8,6 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "dotenv>=0.9.9",
     "gotify>=0.6.0",
+    "icalendar>=6.3.2",
     "requests>=2.32.5",
 ]
