@@ -1,7 +1,7 @@
 [project]
-name = "adum-advancement-scrapper"
+name = "PyADUM"
 version = "0.1.0"
-description = "Add your description here"
+description = "ADUM Python Scrapper"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
