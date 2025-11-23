@@ -208,3 +208,4 @@ __marimo__/
 
 status.txt
 .env
+*.ics

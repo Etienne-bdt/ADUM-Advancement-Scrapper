@@ -224,6 +224,8 @@ class adum(requests.Session):
     def get_icalendar(self) -> str:
         """Get formations data and convert directly to iCal format"""
         formations = self.get_formations()  # Your scraping method
+        if isinstance(formations, str):
+            formations = [formations]
         cal = icalendar.Calendar()
         cal.add("prodid", "-//ADUM Formaitions//mxm.dk//")
         cal.add("version", "2.0")

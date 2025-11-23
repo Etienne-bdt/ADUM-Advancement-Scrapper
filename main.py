@@ -29,7 +29,7 @@ else:
 
 status = adum_client.get_status()
 ical = adum_client.get_icalendar()
-icalendar_path = "adum_calendar.ics"
+icalendar_path = os.getenv("ICAL_OUTPUT_PATH", "./output/advancements.ics")
 with open(icalendar_path, "wb") as f:
     f.write(ical.to_ical())
 print(f"iCalendar saved to {icalendar_path}")
