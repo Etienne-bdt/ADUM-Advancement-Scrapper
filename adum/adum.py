@@ -4,7 +4,7 @@ import re
 import icalendar
 import requests
 from bs4 import BeautifulSoup as bs
-from bs4 import NavigableString, Tag
+from bs4 import Tag
 
 
 class adum(requests.Session):
@@ -126,6 +126,7 @@ class adum(requests.Session):
                             continue
                         details.append(next_sibling.get_text(strip=True))
                         next_sibling = next_sibling.next_sibling
+                details.append("Lien : " + formation_url)
                 session_info.update(self._parse_session_info(details))
                 sessions.append(session_info)
         return sessions
@@ -224,6 +225,9 @@ class adum(requests.Session):
     def get_icalendar(self) -> str:
         """Get formations data and convert directly to iCal format"""
         formations = self.get_formations()  # Your scraping method
+        if not formations:
+            print("No formations found.")
+            return None
         if isinstance(formations, str):
             formations = [formations]
         cal = icalendar.Calendar()
