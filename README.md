@@ -3,9 +3,9 @@
 L'école doctorale has validé my dossier d'inscription
 
 ## TODO
- - [ ] Export formations as an ical
- - [ ] Serve said ICAL through a proxy or smth
- - [ ] Enjoy
+ - [x] Export formations as an ical
+ - [x] Serve said ICAL through a proxy or smth
+ - [x] Enjoy
 
 ## Fonctionnement
 
@@ -18,6 +18,7 @@ Il faut installer les paquets spécifié dans le pyprojet aussi.
 ## Comment l'utiliser ?
 
 1. Setup le venv avec uv ou autre
-2. compléter le service systemd avec les chemins relatifs
-3. `cp adum_scrapper.service /etc/systemd/system/ && cp adum_scrapper.timer /etc/systemd/system/`
-4. `systemctl enable adum_scrapper.timer`
+2. Compléter le .env 
+3. Compléter le service systemd avec les chemins relatifs
+4. `cp adum_scrapper.service /etc/systemd/system/ && cp adum_scrapper.timer /etc/systemd/system/`
+5. `systemctl enable adum_scrapper.timer`
