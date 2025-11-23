@@ -1,4 +1,5 @@
 import os
+
 import dotenv
 from gotify import Gotify
 
@@ -27,8 +28,11 @@ else:
     
 
 status = adum_client.get_status()
-formation_urls =adum_client.get_formations()
-print(adum_client.get_icalendar())
+ical = adum_client.get_icalendar()
+icalendar_path = "adum_calendar.ics"
+with open(icalendar_path, "wb") as f:
+    f.write(ical.to_ical())
+print(f"iCalendar saved to {icalendar_path}")
 #Read the last status from the file (handle missing file)
 try:
     with open("status.txt", "r") as f:

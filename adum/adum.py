@@ -4,6 +4,7 @@ import re
 import icalendar
 import requests
 from bs4 import BeautifulSoup as bs
+from bs4 import NavigableString, Tag
 
 
 class adum(requests.Session):
@@ -102,14 +103,29 @@ class adum(requests.Session):
                     session_info["title"] = title
                 else:
                     session_info["title"] = title + " - " + b_tag.text.strip()
-                next_sibling = b_tag.find_next_sibling()
+                next_sibling = b_tag.find_next()
                 details = []
                 while next_sibling and next_sibling.name != "b":
-                    if next_sibling.name == "br":
+                    if type(next_sibling) is Tag:
+                        len_contents = len(next_sibling.contents)
+                        if len_contents > 1:    
+                            for content in next_sibling.contents:
+                                if content.name == "br" or content.name == "hr":
+                                    continue
+                                details.append(content.get_text(strip=True))
+                            next_sibling = next_sibling.next_sibling
+                        else:
+                            if next_sibling.name == "br":
+                                next_sibling = next_sibling.next_sibling
+                                continue
+                            details.append(next_sibling.get_text(strip=True))
+                            next_sibling = next_sibling.next_sibling
+                    else:
+                        if next_sibling.name == "br":
+                            next_sibling = next_sibling.next_sibling
+                            continue
+                        details.append(next_sibling.get_text(strip=True))
                         next_sibling = next_sibling.next_sibling
-                        continue
-                    details.append(next_sibling.get_text(strip=True))
-                    next_sibling = next_sibling.next_sibling
                 session_info.update(self._parse_session_info(details))
                 sessions.append(session_info)
         return sessions
@@ -129,6 +145,39 @@ class adum(requests.Session):
                 key, value = strings.split(":", 1)
                 info.update({key.strip(): value.strip()})
         return info
+
+    def _create_event(self, session, start_date, startend_time):
+        """Helper method to create an iCal event from session.
+        If an event has two time slots, we take each time slot as an input here and create two events.
+
+        Args:
+            session (dict): The session information.
+        """
+        event = icalendar.Event()
+
+        uid = f"{session.get('title','').replace(' ','_')}_{start_date.strftime('%Y%m%d')}_{startend_time[0].replace('h','').replace(' ','')}"
+        event.add("uid", uid)
+        event.add("summary", session.get("title", ""))
+        event.add("dtstamp", datetime.datetime.now())
+        start_time_str, end_time_str = startend_time
+        start_time = datetime.datetime.strptime(
+            start_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
+        ).time()
+        end_time = datetime.datetime.strptime(
+            end_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
+        ).time()
+        event.add(
+            "dtstart",
+            datetime.datetime.combine(start_date.date(), start_time),
+        )
+        event.add(
+            "dtend", datetime.datetime.combine(start_date.date(), end_time)
+        )
+        event.add("location", session.get("Lieu", ""))
+        description = "\n".join(f"{k}: {v}" for k, v in session.items() if k not in ["Date", "title", "Lieu", "Horaire"])
+        event.add("description", description)
+        return event
+
 
     def _convert_session_to_ical(self, session) -> icalendar.Event:
         """Convert a single session dictionary to an iCal event.
@@ -154,54 +203,13 @@ class adum(requests.Session):
                     r"(\d{1,2}h\s?\d{2})", session.get("Horaire", "")
                 )
                 if len(startend_time) == 2:
-                    event.add("summary", session["title"])
-                    start_time_str, end_time_str = startend_time
-                    start_time = datetime.datetime.strptime(
-                        start_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    end_time = datetime.datetime.strptime(
-                        end_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    event.add(
-                        "dtstart",
-                        datetime.datetime.combine(start_date.date(), start_time),
-                    )
-                    event.add(
-                        "dtend", datetime.datetime.combine(start_date.date(), end_time)
-                    )
+                    return self._create_event(session, start_date, startend_time)
                 elif len(startend_time) == 4:
-                    start_time_str, end_time_str = startend_time[:2]
-                    start_time2_str, end_time2_str = startend_time[2:]
-                    start_time = datetime.datetime.strptime(
-                        start_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    end_time = datetime.datetime.strptime(
-                        end_time_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    start_time2 = datetime.datetime.strptime(
-                        start_time2_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    end_time2 = datetime.datetime.strptime(
-                        end_time2_str.replace("h", ":").replace(" ", ""), "%H:%M"
-                    ).time()
-                    # Create two events
-                    event.add("summary", session["title"])
-                    event.add(
-                        "dtstart",
-                        datetime.datetime.combine(start_date.date(), start_time),
+                    event = self._create_event(
+                        session, start_date, startend_time[0:2]
                     )
-                    event.add(
-                        "dtend", datetime.datetime.combine(start_date.date(), end_time)
-                    )
-
-                    event2 = icalendar.Event()
-                    event2.add("summary", session["title"])
-                    event2.add(
-                        "dtstart",
-                        datetime.datetime.combine(start_date.date(), start_time2),
-                    )
-                    event2.add(
-                        "dtend", datetime.datetime.combine(start_date.date(), end_time2)
+                    event2 = self._create_event(
+                        session, start_date, startend_time[2:4]
                     )
                     return [event, event2]
                 else:
@@ -210,17 +218,16 @@ class adum(requests.Session):
                 pass  # Handle invalid date format if necessary
 
         # Add other details as description
-        description = "\n".join(f"{k}: {v}" for k, v in session.items() if k != "Date")
-        event.add("description", description)
-        print(f"Converted session to iCal event: {session['title']}")
+        
         return event
 
     def get_icalendar(self) -> str:
         """Get formations data and convert directly to iCal format"""
         formations = self.get_formations()  # Your scraping method
         cal = icalendar.Calendar()
-        cal.add("prodid", "-//ADUM Formations//mxm.dk//")
+        cal.add("prodid", "-//ADUM Formaitions//mxm.dk//")
         cal.add("version", "2.0")
+        cal.add("TZID", "Europe/Paris")
 
         for formation_url in formations:
             sessions = self.get_formation_info(formation_url)
@@ -235,4 +242,4 @@ class adum(requests.Session):
                 else:
                     print(f"Could not convert session to iCal: {session}")
                     continue
-        return cal.to_ical().decode("utf-8")
+        return cal
