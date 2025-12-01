@@ -1,7 +1,5 @@
 import datetime
-from platform import node
 import re
-from unittest import result
 
 import icalendar
 import requests
