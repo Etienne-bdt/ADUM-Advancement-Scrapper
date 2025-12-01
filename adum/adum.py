@@ -1,5 +1,7 @@
 import datetime
+from platform import node
 import re
+from unittest import result
 
 import icalendar
 import requests
@@ -69,6 +71,27 @@ class adum(requests.Session):
         ]
         return [a["href"] for sublist in formations_list for a in sublist]
 
+    def _flatten_contents(self, node):
+        result = []
+        if isinstance(node, Tag):
+            if len(node.contents) == 0:
+                for n in node.next_elements:
+                    if n.name == "br" or n.name == "hr":
+                        continue
+                    elif n.name == "b" or n.name == "td" or n.name == "span":
+                        break
+                    else:
+                        result.extend(self._flatten_contents(n))
+            else:
+                for child in node.contents:
+                    if isinstance(child, Tag):
+                        result.extend(self._flatten_contents(child))
+                    else:
+                        result.append(str(child))
+        else:
+            result.append(str(node))        
+        return result
+
     def get_formation_info(self, formation_url: str):
         """Fetches detailed information about a specific formation.
 
@@ -104,30 +127,9 @@ class adum(requests.Session):
                 else:
                     session_info["title"] = title + " - " + b_tag.text.strip()
                 next_sibling = b_tag.find_next()
-                details = []
-                while next_sibling and next_sibling.name != "b":
-                    if type(next_sibling) is Tag:
-                        len_contents = len(next_sibling.contents)
-                        if len_contents > 1:    
-                            for content in next_sibling.contents:
-                                if content.name == "br" or content.name == "hr":
-                                    continue
-                                details.append(content.get_text(strip=True))
-                            next_sibling = next_sibling.next_sibling
-                        else:
-                            if next_sibling.name == "br":
-                                next_sibling = next_sibling.next_sibling
-                                continue
-                            details.append(next_sibling.get_text(strip=True))
-                            next_sibling = next_sibling.next_sibling
-                    else:
-                        if next_sibling.name == "br":
-                            next_sibling = next_sibling.next_sibling
-                            continue
-                        details.append(next_sibling.get_text(strip=True))
-                        next_sibling = next_sibling.next_sibling
-                details.append("Lien : " + formation_url)
-                session_info.update(self._parse_session_info(details))
+                to_parse = self._flatten_contents(next_sibling)
+                to_parse.append("Lien : " + formation_url)
+                session_info.update(self._parse_session_info(to_parse))
                 sessions.append(session_info)
         return sessions
 
@@ -201,8 +203,12 @@ class adum(requests.Session):
                 # If there are four xxhxx we should split into two events
                 # also handle if the time is 9h and a space after h to escape the date
                 startend_time = re.findall(
-                    r"(\d{1,2}h\s?\d{2})", session.get("Horaire", "")
+                    r"(\d{1,2}h\d{0,2})", session.get("Horaire", "")
                 )
+                #If format is HHh or HHhMM without minutes, add 00 minutes
+                for i in range(len(startend_time)):
+                    if re.match(r"^\d{1,2}h$", startend_time[i]):
+                        startend_time[i] = startend_time[i] + "00"
                 if len(startend_time) == 2:
                     return self._create_event(session, start_date, startend_time)
                 elif len(startend_time) == 4:
@@ -216,15 +222,15 @@ class adum(requests.Session):
                 else:
                     return None  # Unable to parse times
             except ValueError:
-                pass  # Handle invalid date format if necessary
-
+                print(f"Invalid date format for session '{session.get('title','')}' with date '{date_str}'")  # Handle invalid date format if necessary
+                pass
         # Add other details as description
         
         return event
 
     def get_icalendar(self) -> str:
         """Get formations data and convert directly to iCal format"""
-        formations = self.get_formations()  # Your scraping method
+        formations = self.get_formations() # Your scraping method
         if not formations:
             print("No formations found.")
             return None
