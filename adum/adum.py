@@ -115,8 +115,20 @@ class adum(requests.Session):
             return []
         else:
             sessions = []
-            # Different sessions are in <b> tags
-            b_tags = formation_section.find_all_next("b")
+            # Different sessions are in <b> tags within the parent <td> container
+            parent_td = formation_section.find_parent("td")
+            if parent_td:
+                all_b_tags = parent_td.find_all("b")
+                # Find index of "Calendrier :" and skip it and everything before
+                try:
+                    cal_index = all_b_tags.index(formation_section)
+                    b_tags = all_b_tags[cal_index + 1:]
+                except ValueError:
+                    print(f"Warning: Could not find 'Calendrier :' tag in parent container for {formation_url}")
+                    b_tags = []
+            else:
+                # find_next_siblings only returns siblings after this element
+                b_tags = formation_section.find_next_siblings("b")
             for b_tag in b_tags:
                 session_info = {}
                 # If there is only Séance 1, there is only one session so no need to add it to the title
